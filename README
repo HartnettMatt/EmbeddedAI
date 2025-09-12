@@ -9,10 +9,7 @@ https://colab.research.google.com/github/tensorflow/tflite-micro/blob/18aec279a0
 
 
 
-Assumes base directory for me of:
-/home/erke9581/embeddedai-forclass
-
-Will use <basedir> when I note
+My base directory is: `/home/erke9581/embeddedai-forclass`, and I will use `<basedir>` to indicate the base directory.
 
 
 ## For Hello World
