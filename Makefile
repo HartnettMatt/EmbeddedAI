@@ -10,8 +10,8 @@ CC_TOOL := gcc
 AR_TOOL := ar
 
 
-#### EDIT
-TFLM_ROOT := /home/erke9581/embeddedai-forclass/tflite-micro
+TFLM_ROOT := /home/matt/Documents/Education/Graduate/EmbeddedAI/tflite-micro
+BINDIR := bin
 
 
 
@@ -64,14 +64,15 @@ LDFLAGS := -lm\
 %.o:	%.cc
 	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
 
-all:	hello_world
+all:	$(BINDIR)/hello_world
 
 all_objs := hello_world.o hello_world_float_model_data.o
 # if using int8 hello_world_int8_model_data.o
 
-hello_world:	$(all_objs)
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -o hello_world $(all_objs) $(LDFLAGS)
+$(BINDIR)/hello_world:	$(all_objs)
+	mkdir -p $(BINDIR)
+	$(CXX) $(CXXFLAGS) $(INCLUDES) -o $(BINDIR)/hello_world $(all_objs) $(LDFLAGS)
 
 
 clean:
-	$(RM) *.o *.d *.map hello_world
+	$(RM) *.o *.d *.map $(BINDIR)/hello_world
