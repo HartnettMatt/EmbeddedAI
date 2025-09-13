@@ -1,4 +1,38 @@
+# Matt Hartnett's ECEN 5003 Lab 1
 
+Requirements:
+- Python
+- UV
+- A GPU or somethin, idk
+
+
+# Notes:
+I spent some time messing with the different parameters to see what I could achieve and here were some general observations on what I saw:
+
+### Single Layer:
+* Increasing the neuron count to 16 helped notably, but especially with more epochs
+* Adding more epochs definitely increased training time, which was annoying to test so I stopped at 1000, which is when more epochs stopped helping so much.
+* Went back to 500 epochs, increase neuron count to 32 and didn't see much improvement over 16
+### Double Layer:
+* Adding a second layer didn't do very much if it's neuron count was too low (8 and 8)
+* Increasing the neuron count of one layer does help a lot, but only if it's the second layer
+* I messed around with epochs with (8, 16) and found the following:
+    * 100 Epochs seemed to do pretty solid (validation MAE of ~ 0.08)
+    * 100 Epochs was fast, which was really nice
+    * 750 Epochs didn't really do that much better than 100 (approximately the same MAE)
+* I increased the first layer count to 16 and found the following:
+    * Epoch count of 500 did much worse than I expected from the example (val MAE of ~0.28) and adding more didn't seem to help much
+    * I couldn't get the error down to less than 0.3 so I gave up and reverted back to 8 neuron layer 1
+* Final results: val_loss of 0.0106, val_mae of 0.0785
+
+### Exporting:
+* My model sizes were as follows:
+    * TensorFlow: 4096 bytes
+    * TensorFlow Lite: 2608 bytes
+    * TensorFlow Lite Qunatized: 3360 bytes
+
+
+# Instructions:
 This is instructions for creating a hello_world executable that will use the 
 model trained in colab.
 
