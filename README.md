@@ -1,8 +1,8 @@
-RUNNING
+# Running
 
-Edit Makefile -- update the TFLM_ROOT variable, and if on mac, TARGET (to osx) and TARGET_ARCH (to arm64)
+Edit Makefile -- update the `TFLM_ROOT` variable, and if on mac, `TARGET` (to osx) and `TARGET_ARCH` (to arm64)
 
-make
+`make`
 
 ./micro_speech  
    ** You should see it printing out 
@@ -23,7 +23,7 @@ In audio_provider_mock.cc, you'll see this code filling a buffer.  This means th
 
 
 
-APPLICATION
+# Application
 
 Took the directory from the tflite repo and the pre-trained models and test wav files, and through 3 steps migrated to a form more suitable for use in a microcontroller.
 https://github.com/tensorflow/tflite-micro/tree/main/tensorflow/lite/micro/examples/micro_speech
@@ -41,13 +41,13 @@ That is, each time inferencing is called, previously, a new model was created, n
 This also required creating an audio_provider_mock.cc, which provides Get functions to read from a buffer.  In the mock case, the buffer is initialized to example data.  But, this aligns with what you'd need to do on arduino, where the audio samples would be read into a buffer from the device.  The calling program, would still use the same Get functions.
 
 
-MODELS / TEST DATA
+# Models / Test Data
 
 Note: Pre-built models are provided for you in the models directory.  Pre-recorded audio samples (for testing) are also provided in the testdata directory).  
 The generate.sh script will call the python script to create the .cc and .h files from tflite and .wav.  Note, you'll need to edit it to update the BASE address. For the provided models and testdata, the script has already been called and the cc/h files are included.  For your own models and testdata, you'll need to run the scripts yourself.
 
 
-TRAINING
+# Training
 
 There's a tutorial for the training, which provides a much easier to follow jupyter notebook.  But, you'll need modification to get it to output something that would work with our code.
 Tutorial:
