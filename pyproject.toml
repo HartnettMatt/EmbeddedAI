@@ -1,0 +1,7 @@
+[project]
+name = "lab-2-micro-speech-v2-hartnettmatt"
+version = "0.1.0"
+description = "Matt Hartnett's work for Lab 2 of Embedded AI"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = ["tensorflow", "tensorflow_datasets"]
