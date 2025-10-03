@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-BASEDIR=/home/erke9581/embeddedai-new/tflite-micro/
+BASEDIR=/home/matt/Documents/Education/Graduate/EmbeddedAI/tflite-micro/
 
 cd testdata
 python3 $BASEDIR/tensorflow/lite/micro/tools/generate_cc_arrays.py testdata *.wav
