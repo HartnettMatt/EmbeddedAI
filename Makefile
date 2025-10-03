@@ -10,7 +10,7 @@ CC_TOOL := gcc
 AR_TOOL := ar
 
 #TFLM_ROOT := /home/erke9581/embeddedai-new/tflite-micro/tensorflow/lite/micro
-TFLM_ROOT := /home/erke9581/embeddedai-new/tflite-micro
+TFLM_ROOT := /home/matt/Documents/Education/Graduate/EmbeddedAI/tflite-micro
 
 #THIRD_PARTY := $(TFLM_ROOT)/tools/make/downloads
 THIRD_PARTY := $(TFLM_ROOT)/tensorflow/lite/micro/tools/make/downloads
