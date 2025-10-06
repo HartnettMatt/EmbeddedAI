@@ -51,7 +51,7 @@ Here are the various fixes I needed to implement to get everything to work:
 - Change the training data to flatten it
 - Change the kCategory count and labels
 
-# Part 2 Notes:
+## Part 2 Notes:
 After recording all of my data, I needed to change the sample rate since I recorded in too high of a sample rate, which stopped the model from being able to process the data. 
 
 I used ChatGPT 5-Thinking with the following prompt to create the `resample_wavs.py` script.
@@ -104,3 +104,12 @@ start_sample += g_matt_go_1000ms_audio_data_size;
 ```
 
 I also had to include those header files in my `Makefile`.
+
+## Part 3 Notes:
+To start here are some of the plots from pre-augmented data:
+![Pre augmented confusion](./figures/init_confusion.png)
+![Pre augmented loss](./figures/init_loss.png)
+
+For the data augmentation, I wanted to start simple, by adding some noise to my dataset.
+
+I used my same 
