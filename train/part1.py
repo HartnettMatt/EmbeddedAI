@@ -104,9 +104,27 @@ for i in range(n):
 
 # %%
 # Spectrogram function defintions
+# Constants to match C++:
+ROWS = 49
+COLUMNS = 40
+WINDOW = 30e-3
+STRIDE = 20e-3
+SAMPLE_RATE = 16e3
+
+# Derived:
+FRAME_LENGTH = int(WINDOW * SAMPLE_RATE)
+FRAME_STEP = int(STRIDE * SAMPLE_RATE)
+FFT_LENGTH = 2 * int(COLUMNS - 1)
+
+
 def get_spectrogram(waveform):
     # Convert the waveform to a spectrogram via a STFT.
-    spectrogram = tf.signal.stft(waveform, frame_length=255, frame_step=128)
+    spectrogram = tf.signal.stft(
+        waveform,
+        frame_length=FRAME_LENGTH,
+        frame_step=FRAME_STEP,
+        fft_length=FFT_LENGTH,
+    )
     # Obtain the magnitude of the STFT.
     spectrogram = tf.abs(spectrogram)
     # Add a `channels` dimension, so that the spectrogram can be used
@@ -194,8 +212,26 @@ train_spectrogram_ds = (
 val_spectrogram_ds = val_spectrogram_ds.cache().prefetch(tf.data.AUTOTUNE)
 test_spectrogram_ds = test_spectrogram_ds.cache().prefetch(tf.data.AUTOTUNE)
 
+
+# Flatten dataset
+def flatten_ds(spec_ds):
+    return spec_ds.map(
+        lambda spec, lab: (
+            tf.reshape(tf.cast(spec, tf.float32), [-1, ROWS * COLUMNS]),
+            lab,
+        ),
+        num_parallel_calls=tf.data.AUTOTUNE,
+    )
+
+
+train_flat = (
+    flatten_ds(train_spectrogram_ds).cache().shuffle(10000).prefetch(tf.data.AUTOTUNE)
+)
+val_flat = flatten_ds(val_spectrogram_ds).cache().prefetch(tf.data.AUTOTUNE)
+test_flat = flatten_ds(test_spectrogram_ds).cache().prefetch(tf.data.AUTOTUNE)
+
 # Create convolutional neural network
-input_shape = example_spectrograms.shape[1:]
+input_shape = (ROWS * COLUMNS,)
 print("Input shape:", input_shape)
 num_labels = len(label_names)
 
@@ -203,23 +239,17 @@ num_labels = len(label_names)
 norm_layer = layers.Normalization()
 # Fit the state of the layer to the spectrograms
 # with `Normalization.adapt`.
-norm_layer.adapt(data=train_spectrogram_ds.map(map_func=lambda spec, label: spec))
+norm_layer.adapt(train_flat.map(lambda x, _: x))
 
 model = models.Sequential(
     [
         layers.Input(shape=input_shape),
-        # Downsample the input.
-        layers.Resizing(32, 32),
-        # Normalize.
         norm_layer,
-        layers.Conv2D(32, 3, activation="relu"),
-        layers.Conv2D(64, 3, activation="relu"),
-        layers.MaxPooling2D(),
-        layers.Dropout(0.25),
-        layers.Flatten(),
-        layers.Dense(128, activation="relu"),
+        layers.Dense(256, activation="relu"),
         layers.Dropout(0.5),
-        layers.Dense(num_labels),
+        layers.Dense(128, activation="relu"),
+        layers.Dropout(0.25),
+        layers.Dense(num_labels),  # logits; no softmax needed on-device
     ]
 )
 
@@ -233,8 +263,8 @@ model.compile(
 )
 EPOCHS = 10
 history = model.fit(
-    train_spectrogram_ds,
-    validation_data=val_spectrogram_ds,
+    train_flat,
+    validation_data=val_flat,
     epochs=EPOCHS,
     callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=2),
 )
@@ -263,10 +293,10 @@ plt.ylabel("Accuracy [%]")
 
 # %%
 # Evaluate the model
-model.evaluate(test_spectrogram_ds, return_dict=True)
-y_pred = model.predict(test_spectrogram_ds)
+model.evaluate(test_flat, return_dict=True)
+y_pred = model.predict(test_flat)
 y_pred = tf.argmax(y_pred, axis=1)
-y_true = tf.concat(list(test_spectrogram_ds.map(lambda s, lab: lab)), axis=0)
+y_true = tf.concat(list(test_flat.map(lambda s, lab: lab)), axis=0)
 confusion_mtx = tf.math.confusion_matrix(y_true, y_pred)
 plt.figure(figsize=(10, 8))
 sns.heatmap(
@@ -290,7 +320,11 @@ waveform = x
 x = get_spectrogram(x)
 x = x[tf.newaxis, ...]
 
-prediction = model(x)
+# Make spectrogram exactly like training, then FLATTEN
+spec = tf.cast(x, tf.float32)
+spec = tf.reshape(spec, [1, ROWS * COLUMNS])  # [1, 1960]
+
+prediction = model(spec, training=False)
 x_labels = ["no", "yes", "down", "go", "left", "up", "right", "stop"]
 plt.bar(x_labels, tf.nn.softmax(prediction[0]))
 plt.title("No")

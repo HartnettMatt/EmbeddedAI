@@ -27,26 +27,27 @@ constexpr int kFeatureElementCount = (kFeatureSize * kFeatureCount);
 constexpr int kFeatureStrideMs = 20;
 constexpr int kFeatureDurationMs = 30;
 
-
 constexpr int kAudioSampleDurationCount =
     kFeatureDurationMs * kAudioSampleFrequency / 1000;
 constexpr int kAudioSampleStrideCount =
     kFeatureStrideMs * kAudioSampleFrequency / 1000;
 
-
 // Variables for the model's output categories.
-constexpr int kCategoryCount = 4;
-constexpr const char* kCategoryLabels[kCategoryCount] = {
-    "silence",
-    "unknown",
-    "yes",
+constexpr int kCategoryCount = 8;
+constexpr const char *kCategoryLabels[kCategoryCount] = {
+    "left",
+    "down",
     "no",
+    "right",
+    "yes",
+    "up",
+    "stop",
+    "go",
 };
 
-namespace MyMicroSpeech {
-using Features = int8_t[kFeatureCount][kFeatureSize];
+namespace MyMicroSpeech
+{
+    using Features = int8_t[kFeatureCount][kFeatureSize];
 }
 
-
-
-#endif  // TENSORFLOW_LITE_MICRO_EXAMPLES_MICRO_SPEECH_MICRO_MODEL_SETTINGS_H_
+#endif // TENSORFLOW_LITE_MICRO_EXAMPLES_MICRO_SPEECH_MICRO_MODEL_SETTINGS_H_

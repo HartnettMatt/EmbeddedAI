@@ -75,6 +75,7 @@ micro_speech_processor.cc \
 models/audio_preprocessor_float_model_data.cc \
 models/audio_preprocessor_int8_model_data.cc \
 models/micro_speech_quantized_model_data.cc \
+models/matt_micro_speech_quantized_model_data.cc \
 testdata/no_1000ms_audio_data.cc \
 testdata/no_30ms_audio_data.cc \
 testdata/noise_1000ms_audio_data.cc \
@@ -101,6 +102,7 @@ micro_speech_processor.o \
 models/audio_preprocessor_float_model_data.o \
 models/audio_preprocessor_int8_model_data.o \
 models/micro_speech_quantized_model_data.o \
+models/matt_micro_speech_quantized_model_data.o \
 testdata/no_1000ms_audio_data.o \
 testdata/no_30ms_audio_data.o \
 testdata/noise_1000ms_audio_data.o \
