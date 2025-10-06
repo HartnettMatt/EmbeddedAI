@@ -107,9 +107,41 @@ I also had to include those header files in my `Makefile`.
 
 ## Part 3 Notes:
 To start here are some of the plots from pre-augmented data:
+### Inital Confusion
 ![Pre augmented confusion](./figures/init_confusion.png)
+### Inital Loss
 ![Pre augmented loss](./figures/init_loss.png)
 
 For the data augmentation, I wanted to start simple, by adding some noise to my dataset.
 
-I used my same 
+I used my same model design, I only changed the training data and not the validation data.
+
+I found that adding noise did help a little, but not very much. 
+I played around with the amount of noise, and settled on 0.01% noise factor.
+### Noisy Confusion
+![Noisy confusion](./figures/noisy_confusion.png)
+### Noisy Loss
+![Noisy loss](./figures/noisy_loss.png)
+
+Next, I messed around with time shifting some of the data around.
+Note: this included the noise augmentation, I wanted to stack as many augmentations as possible.
+
+I had some trouble getting a good function that would actually create a time shift, but in the end I kind of hacked together something that should work.
+
+I played around with the time shifting and I found that it didn't really improve anything meaningfully. 
+In fact, I think that the predicition accuracy was lower after shifting around.
+### Shifted Confusion
+![Shifted confusion](./figures/shifted_confusion.png)
+### Shifted Loss
+![Shifted loss](./figures/shifted_loss.png)
+
+I also tried to increase the number of epochs in my training, but I found that the training loss would decrease, but the validation loss wouldn't, indicating that the model was overfitting on my training data.
+With a larger dataset, I think that epoch count increases would improve validation loss, but with this limited dataset, it doesn't seem to do much.
+
+## Final Notes:
+This lab was difficult, but I learned a lot.
+Most of my struggles were in getting my custom model to play nice with the C++ code that was provided, particularly with matching the input shaping.
+
+Once I got the input and output of the model correct, I was able to iterate a lot faster and figure out all of the other sections, like fine tuning the model.
+I think it would be interesting to use a larger dataset, but I ran out of time before I could do so.
+I'd also like to have been able to test the C++ application more, and tune that as well, particularly in regards to playing with qunatiziation and model/size.

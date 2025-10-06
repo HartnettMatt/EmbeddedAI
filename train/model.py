@@ -76,32 +76,32 @@ def squeeze(audio, labels):
     return audio, labels
 
 
-def add_noise(audio, noise_factor=0.005):
+def add_noise(audio, noise_factor=0.0001):
     noise = tf.random.normal(shape=tf.shape(audio), mean=0.0, stddev=1.0)
     augmented = audio + noise_factor * noise
     augmented = tf.clip_by_value(augmented, -1.0, 1.0)
     return augmented
 
 
-def time_shift(audio, shift_max=1600):
+def time_shift(audio, shift_max=8000):
     shift = tf.random.uniform([], -shift_max, shift_max, dtype=tf.int32)
-    if shift > 0:
-        shifted = tf.concat([audio[shift:], tf.zeros([shift])], axis=0)
+
+    def _shift_one(x):
+        return tf.roll(x, shift=shift, axis=0)
+
+    # If batched input (2D), apply to each row
+    if tf.rank(audio) == 2:
+        return tf.map_fn(_shift_one, audio, dtype=audio.dtype)
     else:
-        shifted = tf.concat([tf.zeros([-shift]), audio[:shift]], axis=0)
-    return shifted
+        return _shift_one(audio)
 
 
-def augment(audio, label):
+def augment(audio, labels):
     audio = tf.cast(audio, tf.float32)
-    # Example: random choice of augmentations
-    audio = tf.cond(
-        tf.random.uniform([]) > 0.5, lambda: add_noise(audio), lambda: audio
-    )
-    # audio = tf.cond(
-    #     tf.random.uniform([]) > 0.5, lambda: time_shift(audio), lambda: audio
-    # )
-    return audio, label
+    audio = add_noise(audio)
+    # Time shifting only decreases quality
+    # audio = time_shift(audio)
+    return audio, labels
 
 
 train_ds = train_ds.map(squeeze, tf.data.AUTOTUNE)
