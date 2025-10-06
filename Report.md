@@ -50,3 +50,57 @@ Here are the various fixes I needed to implement to get everything to work:
 - Increase the arena size
 - Change the training data to flatten it
 - Change the kCategory count and labels
+
+# Part 2 Notes:
+After recording all of my data, I needed to change the sample rate since I recorded in too high of a sample rate, which stopped the model from being able to process the data. 
+
+I used ChatGPT 5-Thinking with the following prompt to create the `resample_wavs.py` script.
+
+Prompt:
+```
+Write a simple python script that iterates through a directory, finds all files of type .wav, then converts those .wav files from a 44.1kHz sample rate to a 16kHz sample rate without losing any information.
+```
+
+I then ran the output as follows:
+`python resample_wavs.py ./testdata/testdata/ --inplace`
+
+It worked great, the audio was downsampled to 16kHz with minimal hassle.
+
+I found that the model was very bad at predicting what the words were, so I modified it to improve it's accuracy. Here are the things I did:
+- Increase epoch count to 30 and disabled auto stopping
+- Increased the internal model shape to be input -> 128 -> 256 -> 128 -> output instead of input -> 256 -> 128 -> output
+- Messed around with dropout to find a good balance between training loss and validation loss
+
+I don't know why, but my model is really bad at accurately predicting my "left" audio file. I know it's the correct file, I've listend to it to double check, but it's still consistently predicting it incorrectly.
+
+In order to use the audio files in my c++ application, I had to add them to `audio_provider_mock.cc` in three places:
+```
+#include "testdata/matt_down_1000ms_audio_data.h"
+#include "testdata/matt_go_1000ms_audio_data.h"
+...
+```
+
+```
+constexpr int32_t audio_data_buffer_size =
+    g_matt_down_1000ms_audio_data_size +
+    g_matt_go_1000ms_audio_data_size +
+    g_matt_left_1000ms_audio_data_size +
+    g_matt_no_1000ms_audio_data_size +
+    g_matt_right_1000ms_audio_data_size +
+    g_matt_silence_1000ms_audio_data_size +
+    g_matt_stop_1000ms_audio_data_size +
+    g_matt_up_1000ms_audio_data_size +
+    g_matt_yes_1000ms_audio_data_size;
+```
+
+
+```
+std::copy_n(g_matt_down_1000ms_audio_data, g_matt_down_1000ms_audio_data_size, audio_data_buffer + start_sample);
+start_sample += g_matt_down_1000ms_audio_data_size;
+
+std::copy_n(g_matt_go_1000ms_audio_data, g_matt_go_1000ms_audio_data_size, audio_data_buffer + start_sample);
+start_sample += g_matt_go_1000ms_audio_data_size;
+...
+```
+
+I also had to include those header files in my `Makefile`.

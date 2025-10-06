@@ -413,10 +413,8 @@ OUT_PATH = EXPORT_DIR / "matt_micro_speech_quantized.tflite"
 
 
 def _rep_data():
-    # Small, fast representative set for calibration; adjust 'take' if you want tighter scales
-    for specs, _ in train_spectrogram_ds.take(20):
-        for i in range(min(8, specs.shape[0])):
-            yield [tf.cast(specs[i : i + 1], tf.float32)]
+    for x, _ in train_flat.take(50):
+        yield [tf.cast(x, tf.float32)]
 
 
 conv = tf.lite.TFLiteConverter.from_keras_model(model)
