@@ -248,9 +248,9 @@ model = models.Sequential(
         layers.Input(shape=input_shape),
         norm_layer,
         layers.Dense(128, activation="relu"),
-        layers.Dropout(0.15),
+        layers.Dropout(0.25),
         layers.Dense(256, activation="relu"),
-        layers.Dropout(0.2),
+        layers.Dropout(0.5),
         layers.Dense(128, activation="relu"),
         layers.Dropout(0.2),
         layers.Dense(num_labels),  # logits; no softmax needed on-device
@@ -270,7 +270,6 @@ history = model.fit(
     train_flat,
     validation_data=val_flat,
     epochs=EPOCHS,
-    callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=2),
 )
 
 # %%
@@ -380,7 +379,7 @@ plt.ylabel("Label")
 plt.show()
 # %%
 # Run inference
-SAMPLE = "go"
+SAMPLE = "left"
 x = matt_data_dir / f"matt_{SAMPLE}_1000ms.wav"
 x = tf.io.read_file(str(x))
 x, sample_rate = tf.audio.decode_wav(
@@ -430,3 +429,5 @@ conv.inference_output_type = tf.int8
 tflite_int8 = conv.convert()
 OUT_PATH.write_bytes(tflite_int8)
 print(f"[export] wrote {OUT_PATH} ({len(tflite_int8)} bytes)")
+
+# %%
