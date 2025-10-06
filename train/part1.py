@@ -16,6 +16,7 @@ import tensorflow as tf
 from tensorflow.keras import layers
 from tensorflow.keras import models
 from IPython import display
+from glob import glob
 
 # %%
 # Set the seed value for experiment reproducibility.
@@ -42,6 +43,7 @@ else:
     print(f"Files found at {data_dir}, not downloading new files")
 
 data_dir = data_dir / "mini_speech_commands_extracted/mini_speech_commands"
+matt_data_dir = pathlib.Path(__file__).parent.resolve() / "../testdata/"
 
 # %%
 # Find data files
@@ -245,10 +247,12 @@ model = models.Sequential(
     [
         layers.Input(shape=input_shape),
         norm_layer,
-        layers.Dense(256, activation="relu"),
-        layers.Dropout(0.5),
         layers.Dense(128, activation="relu"),
-        layers.Dropout(0.25),
+        layers.Dropout(0.15),
+        layers.Dense(256, activation="relu"),
+        layers.Dropout(0.2),
+        layers.Dense(128, activation="relu"),
+        layers.Dropout(0.2),
         layers.Dense(num_labels),  # logits; no softmax needed on-device
     ]
 )
@@ -261,7 +265,7 @@ model.compile(
     loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
     metrics=["accuracy"],
 )
-EPOCHS = 10
+EPOCHS = 30
 history = model.fit(
     train_flat,
     validation_data=val_flat,
@@ -307,8 +311,77 @@ plt.ylabel("Label")
 plt.show()
 
 # %%
+# Evaluate the model with matt data:
+matt_wavs = sorted(glob(str(matt_data_dir / "*.wav")))
+matt_filenames = [os.path.basename(wav) for wav in matt_wavs]
+matt_labels = [file.split("_")[1] for file in matt_filenames]
+
+name_to_idx = {name: i for i, name in enumerate(label_names)}
+label_ids = [name_to_idx[lbl] for lbl in matt_labels if lbl in name_to_idx]
+matt_wavs = [w for w, lbl in zip(matt_wavs, matt_labels) if lbl in name_to_idx]
+
+paths_ds = tf.data.Dataset.from_tensor_slices(matt_wavs)
+labels_ds = tf.data.Dataset.from_tensor_slices(label_ids)
+matt_ds = tf.data.Dataset.zip((paths_ds, labels_ds))
+
+
+def load_and_flatten(path, lab):
+    audio_bytes = tf.io.read_file(path)
+    audio, _ = tf.audio.decode_wav(
+        audio_bytes, desired_channels=1, desired_samples=16000
+    )
+    audio = tf.squeeze(audio, axis=-1)
+    spec = get_spectrogram(audio)
+    spec = tf.cast(spec, tf.float32)
+    spec = tf.reshape(spec, [ROWS * COLUMNS])
+    return spec, lab
+
+
+matt_flat = (
+    matt_ds.map(load_and_flatten, num_parallel_calls=tf.data.AUTOTUNE)
+    .batch(64)
+    .cache()
+    .prefetch(tf.data.AUTOTUNE)
+)
+
+model.evaluate(matt_flat, return_dict=True)
+
+y_logits = model.predict(matt_flat)
+y_pred = tf.argmax(y_logits, axis=1)
+
+# True labels
+y_true = tf.concat(list(matt_flat.map(lambda s, lab: lab)), axis=0)
+y_true_int = tf.cast(y_true, tf.int32)
+
+# --- Soft confusion matrix (average confidence per true class) ---
+# This section was written by Chat GPT 5-Thinking with the prompt:
+# Modify this confusion matrix to include confidence level in each guess instead of single value reporting
+probs = tf.nn.softmax(y_logits, axis=1)  # [N, num_labels]
+soft_sum = tf.math.unsorted_segment_sum(
+    probs, y_true_int, num_segments=len(label_names)
+)
+row_counts = tf.math.bincount(
+    y_true_int, minlength=len(label_names), maxlength=len(label_names)
+)
+row_counts = tf.cast(tf.maximum(row_counts, 1), tf.float32)  # avoid div-by-zero
+confusion_mtx = soft_sum / row_counts[:, None]  # [num_labels, num_labels]
+# End of Chat GPT code
+
+plt.figure(figsize=(10, 8))
+sns.heatmap(
+    confusion_mtx,
+    xticklabels=label_names,
+    yticklabels=label_names,
+    annot=True,
+    fmt=".3f",
+)
+plt.xlabel("Prediction")
+plt.ylabel("Label")
+plt.show()
+# %%
 # Run inference
-x = data_dir / "no/01bb6a2a_nohash_0.wav"
+SAMPLE = "go"
+x = matt_data_dir / f"matt_{SAMPLE}_1000ms.wav"
 x = tf.io.read_file(str(x))
 x, sample_rate = tf.audio.decode_wav(
     x,
@@ -325,9 +398,9 @@ spec = tf.cast(x, tf.float32)
 spec = tf.reshape(spec, [1, ROWS * COLUMNS])  # [1, 1960]
 
 prediction = model(spec, training=False)
-x_labels = ["no", "yes", "down", "go", "left", "up", "right", "stop"]
+x_labels = label_names
 plt.bar(x_labels, tf.nn.softmax(prediction[0]))
-plt.title("No")
+plt.title(SAMPLE)
 plt.show()
 
 display.display(display.Audio(waveform, rate=16000))
