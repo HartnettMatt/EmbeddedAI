@@ -1,7 +1,7 @@
 [project]
 name = "lab-3-building-a-dataset-team6"
 version = "0.1.0"
-description = "Add your description here"
+description = "Embedded AI, Team 6 Lab 3"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
