@@ -12,5 +12,6 @@ dependencies = [
     "pathlib>=1.0.1",
     "pydot>=4.0.1",
     "scipy>=1.16.2",
+    "seaborn>=0.13.2",
     "tensorflow>=2.20.0",
 ]
