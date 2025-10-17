@@ -1,25 +1,106 @@
-# Embedded AI Lab 3
+# Embedded AI Lab 3 — Magic Wand Gesture Recognition [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ColoradoEmbeddedAI-Fall2025/lab-3-building-a-dataset-team6/blob/main/model/model.ipynb)
 
-### Team 6:
-Alha Kane,
-Matt Hartnett,
-Piyush Nagpal,
-Sam Walker,
-Shane McCammon,
-Zane McMorris
+### Team 6
 
-## Project
-The purpose of this project is create an AI trained on accelerometer and orientation data from a cell phone to make a "magic wand".
+* **Alha Kane**
+* **Matt Hartnett**
+* **Piyush Nagpal**
+* **Sam Walker**
+* **Shane McCammon**
+* **Zane McMorris**
 
-Data was collected on smart phones using [this](https://www.tszheichoi.com/sensorlogger) tool.
+---
 
-The two gestures for this project are a square and a triangle.
+## Project Overview
 
-## Requirements
-- `python`
-- `uv`
+This project implements a **gesture recognition system** that transforms a smartphone into a **Magic Wand** using AI.
+The trained model classifies two motion gestures based on accelerometer and orientation data collected from smartphones:
 
-## Running
-To run locally, create the virtual environment with `uv sync`.
+* **Square**
+* **Triangle**
 
-Run the `modelmodel.ipynb` through an interactive view or directly.
+---
+
+## Data Collection
+
+Data was collected using the [**Sensor Logger**](https://www.tszheichoi.com/sensorlogger) app on smartphones.
+
+### Data Details
+
+* **Sensors used:** Accelerometer, Gyroscope, Orientation
+* **Sampling rate:** ~100 Hz
+* **Format:** CSV files with time-synchronized IMU readings
+* **Preprocessing:**
+
+  * Data normalization
+  * Segmentation into fixed-size windows
+  * Label encoding (`0` → Square, `1` → Triangle)
+
+---
+
+## Model Architecture
+
+The model is a convolutional neural network (CNN) designed for multi-class image classification. It processes input images of shape `(32, 32, 3)` and outputs predictions over `2 (square, triangle)` categories.
+
+### Architecture Details:
+
+* **Input Layer:** Accepts RGB images with specified width and height.
+* **Rescaling:** Input pixel values are normalized by scaling them to the [0, 1] range.
+* **Convolutional Blocks:**
+
+  * Three convolutional layers with filter sizes 16, 32, and 64 respectively.
+  * Each convolution uses a 3x3 kernel with stride 2 and "same" padding, effectively reducing spatial dimensions.
+  * Each conv layer is followed by batch normalization and ReLU activation.
+  * Dropout of 0.4 is applied after each activation to reduce overfitting.
+* **Global Average Pooling:** Reduces the feature maps to a single vector per channel, aggregating spatial information.
+* **Dropout Layer:** A final dropout with rate 0.5 to further regularize the model.
+* **Output Layer:** Fully connected dense layer with `2` units and a softmax activation for multi-class probability output.
+
+### Training Setup:
+
+* **Loss Function:** Sparse categorical crossentropy, suitable for integer-labeled multi-class classification.
+* **Optimizer:** Adam with a learning rate of 0.001.
+* **Metrics:** Accuracy to evaluate performance.
+* **Epochs:** The model is trained for 50 epochs.
+* **Data:** Training and validation datasets are preprocessed and fed through TensorFlow datasets with prefetching for performance.
+
+---
+
+## Setup Instructions
+
+### Requirements
+
+* `python >= 3.12`
+* `uv` (virtual environment manager)
+
+### Environment Setup
+
+```bash
+# Create and sync virtual environment
+uv sync
+```
+
+Then open and run the notebook:
+
+```bash
+jupyter notebook model.ipynb
+```
+
+---
+
+## Model Evaluation
+
+### Confusion Matrix
+
+| Actual \ Predicted | Square | Triangle |
+| ------------------ | :----: | :------: |
+| **Square**         |  0.98  |   0.02   |
+| **Triangle**       |  0.04  |   0.96   |
+
+### Results Summary
+
+* **Accuracy:** ~97%
+* **Precision (Square):** 0.98
+* **Precision (Triangle):** 0.96
+* **Loss:** < 0.1 after 50 epochs
+* **Observation:** Excellent class separation with minimal misclassification.
