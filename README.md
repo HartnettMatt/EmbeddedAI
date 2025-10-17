@@ -27,7 +27,7 @@ Data was collected using the [**Sensor Logger**](https://www.tszheichoi.com/sens
 
 ### Data Details
 
-* **Sensors used:** Accelerometer, Gyroscope, Orientation
+* **Sensors used:** Accelerometer, Orientation
 * **Sampling rate:** ~100 Hz
 * **Format:** CSV files with time-synchronized IMU readings
 * **Preprocessing:**
