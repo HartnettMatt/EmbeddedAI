@@ -78,12 +78,13 @@ The model is a convolutional neural network (CNN) designed for multi-class image
 ```bash
 # Create and sync virtual environment
 uv sync
+source ./.venv/bin/activate
 ```
 
 Then open and run the notebook:
 
 ```bash
-jupyter notebook model.ipynb
+jupyter notebook model/model.ipynb
 ```
 
 ---
