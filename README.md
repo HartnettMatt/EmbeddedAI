@@ -23,7 +23,7 @@ The trained model classifies two motion gestures based on accelerometer and orie
 
 ## Data Collection
 
-Data was collected using the [**Sensor Logger**](https://www.tszheichoi.com/sensorlogger) app on smartphones.
+Data was collected using the [**Sensor Logger**](https://www.tszheichoi.com/sensorlogger) app on smartphones. In order to achieve the best results, faster movements were used. I.E. drawing the entire gestures in 2-4s. This is because the snr is much better because the noise remains the same while the acceleration is much larger.
 
 ### Data Details
 
@@ -36,6 +36,21 @@ Data was collected using the [**Sensor Logger**](https://www.tszheichoi.com/sens
   * Segmentation into fixed-size windows
   * Label encoding (`0` → Square, `1` → Triangle)
 
+### Data Organization
+
+* Data
+  * Training
+    * Square
+      * .zip (orientation and accelerometer data)
+    * Triangle
+      * .zip (orientation and accelerometer data)
+  * Validation
+    * Square
+      * .zip (orientation and accelerometer data)
+    * Triangle
+      * .zip (orientation and accelerometer data) 
+
+We have a python script that parses all the zip files for us. This allows us to simply upload the corresponding zip files straight from the app to the appropriate folders.
 ---
 
 ## Model Architecture
