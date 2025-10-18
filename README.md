@@ -50,7 +50,9 @@ Data was collected using the [**Sensor Logger**](https://www.tszheichoi.com/sens
     * Triangle
       * .zip (orientation and accelerometer data) 
 
+
 We have a python script that parses all the zip files for us. This allows us to simply upload the corresponding zip files straight from the app to the appropriate folders.
+
 ---
 
 ## Model Architecture
