@@ -13,7 +13,7 @@
 
 ## Project Overview
 
-This project implements a **gesture recognition system** that transforms a smartphone into a **Magic Wand** using AI.
+This project implements a **gesture recognition system** that transforms a smartphone into a **magic wand** using AI.
 The trained model classifies two motion gestures based on accelerometer and orientation data collected from smartphones:
 
 * **Square**
