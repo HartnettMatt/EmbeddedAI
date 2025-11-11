@@ -1,0 +1,24 @@
+[
+  {
+    "layer": "bnn_hidden",
+    "input_dim": 64,
+    "units": 128,
+    "weights_pm1_file": "bnn_hidden_weights_pm1.npy",
+    "weights_bits_file": "bnn_hidden_weights_bits.npy",
+    "bias_file": "bnn_hidden_bias.npy",
+    "bn_alpha_file": "bnn_hidden_bn_alpha.npy",
+    "bn_mean_file": "bnn_hidden_bn_mean.npy",
+    "bn_var_file": "bnn_hidden_bn_var.npy",
+    "bn_beta_file": "bnn_hidden_bn_beta.npy",
+    "popcount_threshold_file": "bnn_hidden_popcount_threshold.npy",
+    "comparison_sense_file": "bnn_hidden_comparison_sense.npy"
+  },
+  {
+    "layer": "bnn_logits",
+    "input_dim": 128,
+    "units": 10,
+    "weights_pm1_file": "bnn_logits_weights_pm1.npy",
+    "weights_bits_file": "bnn_logits_weights_bits.npy",
+    "bias_file": "bnn_logits_bias.npy"
+  }
+]
