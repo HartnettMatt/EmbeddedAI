@@ -1,0 +1,18 @@
+[project]
+name = "lab-3-building-a-dataset-team6"
+version = "0.1.0"
+description = "Embedded AI, Team 6 Lab 3"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ipykernel>=7.0.1",
+    "jupyter>=1.1.1",
+    "matplotlib>=3.10.7",
+    "numpy>=2.3.4",
+    "pandas>=2.3.3",
+    "pathlib>=1.0.1",
+    "pydot>=4.0.1",
+    "scipy>=1.16.2",
+    "seaborn>=0.13.2",
+    "tensorflow>=2.20.0",
+]
