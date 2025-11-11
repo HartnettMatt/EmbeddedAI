@@ -1,0 +1,147 @@
+# Lab 2 Report
+### Matt Hartnett, ECEN 4003, Embedded AI
+
+## Part 1 Notes:
+
+I decided to run things locally, that way I don't have to worry about co-lab interrupting things (and I think it's interesting to see the performance on a machine I am familiar with).
+
+In order to run the python, you can either upload it to co-lab, or run it locally using the virtual environment created and managed with `uv`.
+Install `uv` and run `uv sync` on the repo in order to create the virtual environment. 
+After that, use either `uv run python ./train/part1.py` or `source .venv/bin/activate && python ./train/part1.py`.
+
+
+I went through most of the example, but then stopped to check my understanding once I got to graphing the spectrograms.
+
+This is how I think of spectrograms:
+Imagine breaking your signal into a bunch of little time slices, and each one of those time slices can overlap, but they're all mapped across the x axis.
+Then take the FFT of each slice, and the frequency dimension becomes the y axis.
+The spectrogram is the top down view of all of the FFTs with color representing the power of the signal's frequency for that slice.
+
+More slices = better time resolution, worse frequency resolution (larger fft bins, more spectral leakage)
+Windowing: can help with spectral leakage (I'm a blackman-harris fan, personally)
+
+Looking at the the confusion map, a lot of it makes intuitive sense: I can understand why "go" and "no" are often confused for each other, but some are a little less obvious, like "down and "go".
+
+On the exporting side, I found that the export section of the online guide was basically entirely broken due to some confusing type errors that I didn't think was worth the effort to fix.
+Instead, I just wrote my own export that created a `matt_micro_speech_qunatized.tflite` file.
+
+From there, I edited the `Makefile` to match my tflite-micro installation locatioin, then I ran the generate.sh script to get the *.h and *.cc files.
+Once those files existed, I included them in the Makefile in much the same way as the current models.
+
+After that, I changed the include statement in the `micro_speech_processor.cc` file to include my file instead of the default.
+I also had to change the `tflite::GetModel()` call.
+
+I built my code and ran it, but I got the following error:
+
+``` 
+AudioPreprocessor model arena size = 9944
+Didn't find op for builtin opcode 'RESIZE_BILINEAR'
+Failed to get registration from op code RESIZE_BILINEAR
+ 
+MicroSpeechModelInitialize: AllocateTensors failed with status 1
+Got 16000 samples from audio provider at time 1000 ms
+Segmentation fault (core dumped)
+```
+
+Here are the various fixes I needed to implement to get everything to work:
+- Change model input size to not resize, but use the default
+- Add a bunch of OpCodes to the `op_resolver`
+- Increase the size of the `op_resolver` to 10 instead of 4
+- Increase the arena size
+- Change the training data to flatten it
+- Change the kCategory count and labels
+
+## Part 2 Notes:
+After recording all of my data, I needed to change the sample rate since I recorded in too high of a sample rate, which stopped the model from being able to process the data. 
+
+I used ChatGPT 5-Thinking with the following prompt to create the `resample_wavs.py` script.
+
+Prompt:
+```
+Write a simple python script that iterates through a directory, finds all files of type .wav, then converts those .wav files from a 44.1kHz sample rate to a 16kHz sample rate without losing any information.
+```
+
+I then ran the output as follows:
+`python resample_wavs.py ./testdata/testdata/ --inplace`
+
+It worked great, the audio was downsampled to 16kHz with minimal hassle.
+
+I found that the model was very bad at predicting what the words were, so I modified it to improve it's accuracy. Here are the things I did:
+- Increase epoch count to 30 and disabled auto stopping
+- Increased the internal model shape to be input -> 128 -> 256 -> 128 -> output instead of input -> 256 -> 128 -> output
+- Messed around with dropout to find a good balance between training loss and validation loss
+
+I don't know why, but my model is really bad at accurately predicting my "left" audio file. I know it's the correct file, I've listend to it to double check, but it's still consistently predicting it incorrectly.
+
+In order to use the audio files in my c++ application, I had to add them to `audio_provider_mock.cc` in three places:
+```
+#include "testdata/matt_down_1000ms_audio_data.h"
+#include "testdata/matt_go_1000ms_audio_data.h"
+...
+```
+
+```
+constexpr int32_t audio_data_buffer_size =
+    g_matt_down_1000ms_audio_data_size +
+    g_matt_go_1000ms_audio_data_size +
+    g_matt_left_1000ms_audio_data_size +
+    g_matt_no_1000ms_audio_data_size +
+    g_matt_right_1000ms_audio_data_size +
+    g_matt_silence_1000ms_audio_data_size +
+    g_matt_stop_1000ms_audio_data_size +
+    g_matt_up_1000ms_audio_data_size +
+    g_matt_yes_1000ms_audio_data_size;
+```
+
+
+```
+std::copy_n(g_matt_down_1000ms_audio_data, g_matt_down_1000ms_audio_data_size, audio_data_buffer + start_sample);
+start_sample += g_matt_down_1000ms_audio_data_size;
+
+std::copy_n(g_matt_go_1000ms_audio_data, g_matt_go_1000ms_audio_data_size, audio_data_buffer + start_sample);
+start_sample += g_matt_go_1000ms_audio_data_size;
+...
+```
+
+I also had to include those header files in my `Makefile`.
+
+## Part 3 Notes:
+To start here are some of the plots from pre-augmented data:
+### Inital Confusion
+![Pre augmented confusion](./figures/init_confusion.png)
+### Inital Loss
+![Pre augmented loss](./figures/init_loss.png)
+
+For the data augmentation, I wanted to start simple, by adding some noise to my dataset.
+
+I used my same model design, I only changed the training data and not the validation data.
+
+I found that adding noise did help a little, but not very much. 
+I played around with the amount of noise, and settled on 0.01% noise factor.
+### Noisy Confusion
+![Noisy confusion](./figures/noisy_confusion.png)
+### Noisy Loss
+![Noisy loss](./figures/noisy_loss.png)
+
+Next, I messed around with time shifting some of the data around.
+Note: this included the noise augmentation, I wanted to stack as many augmentations as possible.
+
+I had some trouble getting a good function that would actually create a time shift, but in the end I kind of hacked together something that should work.
+
+I played around with the time shifting and I found that it didn't really improve anything meaningfully. 
+In fact, I think that the predicition accuracy was lower after shifting around.
+### Shifted Confusion
+![Shifted confusion](./figures/shifted_confusion.png)
+### Shifted Loss
+![Shifted loss](./figures/shifted_loss.png)
+
+I also tried to increase the number of epochs in my training, but I found that the training loss would decrease, but the validation loss wouldn't, indicating that the model was overfitting on my training data.
+With a larger dataset, I think that epoch count increases would improve validation loss, but with this limited dataset, it doesn't seem to do much.
+
+## Final Notes:
+This lab was difficult, but I learned a lot.
+Most of my struggles were in getting my custom model to play nice with the C++ code that was provided, particularly with matching the input shaping.
+
+Once I got the input and output of the model correct, I was able to iterate a lot faster and figure out all of the other sections, like fine tuning the model.
+I think it would be interesting to use a larger dataset, but I ran out of time before I could do so.
+I'd also like to have been able to test the C++ application more, and tune that as well, particularly in regards to playing with qunatiziation and model/size.

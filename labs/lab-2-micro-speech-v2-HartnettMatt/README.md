@@ -1,0 +1,59 @@
+# Running
+
+Edit Makefile -- update the `TFLM_ROOT` variable, and if on mac, `TARGET` (to osx) and `TARGET_ARCH` (to arm64)
+
+`make`
+
+./micro_speech  
+   ** You should see it printing out 
+
+
+In audio_provider_mock.cc, you'll see this code filling a buffer.  This means the first 1s is saying 'yes', the second is 'no', the third and fourth are noise and silence (both of which are interpreted as silence by the model provided).  Then it repeats.  
+   std::copy_n(g_yes_1000ms_audio_data, g_yes_1000ms_audio_data_size,  audio_data_buffer + start_sample);
+   start_sample += g_yes_1000ms_audio_data_size;
+
+   std::copy_n(g_no_1000ms_audio_data, g_no_1000ms_audio_data_size,  audio_data_buffer + start_sample);
+   start_sample += g_no_1000ms_audio_data_size;
+
+   std::copy_n(g_noise_1000ms_audio_data, g_noise_1000ms_audio_data_size,  audio_data_buffer + start_sample);
+   start_sample += g_noise_1000ms_audio_data_size;
+
+   std::copy_n(g_silence_1000ms_audio_data, g_silence_1000ms_audio_data_size,  audio_data_buffer + start_sample);
+   start_sample += g_silence_1000ms_audio_data_size;
+
+
+
+# Application
+
+Took the directory from the tflite repo and the pre-trained models and test wav files, and through 3 steps migrated to a form more suitable for use in a microcontroller.
+https://github.com/tensorflow/tflite-micro/tree/main/tensorflow/lite/micro/examples/micro_speech
+
+
+1) Split the single micro_speech_test.cc into separate piece. (end result is in chkpoint1)
+   (i) micro_speech_processor - performs inferencing for the word detection model (in=spectrogram, out=predicted word.
+   (ii) audio_processor - performs inferencing, using audio data (int16_t samples) and creating a spectrogram.
+   (iii) micro_speech_test -- now, just calls functions in those files.
+
+2) transitioned micro_speech_process and audio_processor to have separate init and inferencing functions. (end result in chkpoint2)
+That is, each time inferencing is called, previously, a new model was created, new ops were registered, new tensors allocated, etc.  Now, that only happens once (in init), and each call to inference just uses those.
+
+3) Created a main_functions.cc which follows the setup() and loop() calls that would be found on arduino (and generally). (end result in chkpoint3)
+This also required creating an audio_provider_mock.cc, which provides Get functions to read from a buffer.  In the mock case, the buffer is initialized to example data.  But, this aligns with what you'd need to do on arduino, where the audio samples would be read into a buffer from the device.  The calling program, would still use the same Get functions.
+
+
+# Models / Test Data
+
+Note: Pre-built models are provided for you in the models directory.  Pre-recorded audio samples (for testing) are also provided in the testdata directory).  
+The generate.sh script will call the python script to create the .cc and .h files from tflite and .wav.  Note, you'll need to edit it to update the BASE address. For the provided models and testdata, the script has already been called and the cc/h files are included.  For your own models and testdata, you'll need to run the scripts yourself.
+
+
+# Training
+
+There's a tutorial for the training, which provides a much easier to follow jupyter notebook.  But, you'll need modification to get it to output something that would work with our code.
+Tutorial:
+https://www.tensorflow.org/tutorials/audio/simple_audio
+
+The provided models (in both this repo, and from the tflite-micro repo), were trained using the following.  This calls a bunch of python scripts, and is not easy to follow and when I ran it was generating errors (and my attempts to fix it weren't successful -- you are welcome to try this instead):
+https://github.com/tensorflow/tflite-micro/blob/main/tensorflow/lite/micro/examples/micro_speech/train/train_micro_speech_model.ipynb
+
+

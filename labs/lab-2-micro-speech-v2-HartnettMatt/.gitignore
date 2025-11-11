@@ -1,0 +1,18 @@
+# Downloaded data
+testdata/mini_speech_commands/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# C compiled
+*.o
+micro_speech
+micro_speech_test
