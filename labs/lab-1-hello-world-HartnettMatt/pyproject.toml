@@ -1,0 +1,12 @@
+[project]
+name = "lab-1-hello-world-hartnettmatt"
+version = "0.1.0"
+description = "Matt's work for lab 1 of ECEN 5003, Embedded AI"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "ipykernel>=6.30.1",
+    "matplotlib>=3.10.6",
+    "pandas>=2.3.2",
+    "tensorflow>=2.20.0",
+]
