@@ -1,0 +1,69 @@
+[*]
+[*] GTKWave Analyzer v3.3.125 (w)1999-2025 BSI
+[*] Tue Dec  2 03:38:00 2025
+[*]
+[dumpfile] "/mnt/raid/matt/Documents/Education/Graduate/EmbeddedAI/EmbeddedAI/final-project/hw/dump.vcd"
+[dumpfile_mtime] "Tue Dec  2 03:36:51 2025"
+[dumpfile_size] 7129
+[savefile] "/mnt/raid/matt/Documents/Education/Graduate/EmbeddedAI/EmbeddedAI/final-project/hw/tb.gtkw"
+[timestart] 0
+[size] 2560 1440
+[pos] -46 -46
+*-14.486092 15300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] tiny_bnn_accel.
+[sst_width] 209
+[signals_width] 214
+[sst_expanded] 1
+[sst_vpaned_height] 449
+@28
+tiny_bnn_accel.clk
+tiny_bnn_accel.rst_n
+@c00200
+-parameters
+@22
+tiny_bnn_accel.DATA_WIDTH[31:0]
+tiny_bnn_accel.L1_B_BASE[31:0]
+tiny_bnn_accel.L1_B_WORDS[31:0]
+tiny_bnn_accel.L1_IN[31:0]
+tiny_bnn_accel.L1_OUT[31:0]
+tiny_bnn_accel.L1_T_BASE[31:0]
+tiny_bnn_accel.L1_T_WORDS[31:0]
+tiny_bnn_accel.L1_W_BASE[31:0]
+tiny_bnn_accel.L1_W_BITS[31:0]
+tiny_bnn_accel.L1_W_WORDS[31:0]
+tiny_bnn_accel.L2_B_BASE[31:0]
+tiny_bnn_accel.L2_B_WORDS[31:0]
+tiny_bnn_accel.L2_IN[31:0]
+tiny_bnn_accel.L2_OUT[31:0]
+tiny_bnn_accel.L2_W_BASE[31:0]
+tiny_bnn_accel.L2_W_BITS[31:0]
+tiny_bnn_accel.L2_W_WORDS[31:0]
+tiny_bnn_accel.MEM_DEPTH[31:0]
+tiny_bnn_accel.TID_WIDTH[31:0]
+@1401200
+-parameters
+@22
+tiny_bnn_accel.hidden_bits_comb[127:0]
+tiny_bnn_accel.hidden_bits_q[127:0]
+@800200
+-m_axis
+@22
+tiny_bnn_accel.m_axis_tdata[7:0]
+tiny_bnn_accel.m_axis_tid[3:0]
+@28
+tiny_bnn_accel.m_axis_tready
+tiny_bnn_accel.m_axis_tvalid
+@1000200
+-m_axis
+@800200
+-s_axis
+@22
+tiny_bnn_accel.s_axis_tdata[63:0]
+tiny_bnn_accel.s_axis_tid[3:0]
+@28
+tiny_bnn_accel.s_axis_tready
+tiny_bnn_accel.s_axis_tvalid
+@1000200
+-s_axis
+[pattern_trace] 1
+[pattern_trace] 0

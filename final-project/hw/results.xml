@@ -1,0 +1,11 @@
+<testsuites name="results">
+  <testsuite name="all" package="all">
+    <property name="random_seed" value="1764651646" />
+    <testcase name="test_reset_condition" classname="testbench" file="/mnt/raid/matt/Documents/Education/Graduate/EmbeddedAI/EmbeddedAI/final-project/hw/testbench.py" lineno="74" time="0.00103759765625" sim_time_ns="50.001" ratio_time="48189.19905882353" />
+    <testcase name="test_single_image_flow" classname="testbench" file="/mnt/raid/matt/Documents/Education/Graduate/EmbeddedAI/EmbeddedAI/final-project/hw/testbench.py" lineno="87" time="0.0038635730743408203" sim_time_ns="60.001" ratio_time="15529.9249801913" />
+    <testcase name="test_basic_backpressure" classname="testbench" file="/mnt/raid/matt/Documents/Education/Graduate/EmbeddedAI/EmbeddedAI/final-project/hw/testbench.py" lineno="128" time="0.0010433197021484375" sim_time_ns="90.00099999999999" ratio_time="86264.06634003656" />
+    <testcase name="test_batch_dataset_predictions" classname="testbench" file="/mnt/raid/matt/Documents/Education/Graduate/EmbeddedAI/EmbeddedAI/final-project/hw/testbench.py" lineno="157" time="0.0655355453491211" sim_time_ns="6030.001" ratio_time="92011.15162583857" />
+    <testcase name="test_latency" classname="testbench" file="/mnt/raid/matt/Documents/Education/Graduate/EmbeddedAI/EmbeddedAI/final-project/hw/testbench.py" lineno="198" time="0.0009343624114990234" sim_time_ns="50.001000000000204" ratio_time="53513.49688798185" />
+    <testcase name="test_throughput" classname="testbench" file="/mnt/raid/matt/Documents/Education/Graduate/EmbeddedAI/EmbeddedAI/final-project/hw/testbench.py" lineno="225" time="0.005192279815673828" sim_time_ns="430.0010000000002" ratio_time="82815.45202975484" />
+  </testsuite>
+</testsuites>

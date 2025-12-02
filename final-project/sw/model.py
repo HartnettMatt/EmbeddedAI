@@ -10,13 +10,19 @@ and export weights/thresholds plus golden vectors for the RTL testbench.
 # %%
 from __future__ import annotations
 
+import os
 import json
+import random
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+
+os.environ["PYTHONHASHSEED"] = "42"
+os.environ["TF_DETERMINISTIC_OPS"] = "1"
+
 import tensorflow as tf
 from sklearn import datasets
 from sklearn.metrics import classification_report, confusion_matrix
@@ -27,6 +33,8 @@ from sklearn.model_selection import train_test_split
 SEED = 42
 tf.random.set_seed(SEED)
 np.random.seed(SEED)
+random.seed(SEED)
+tf.config.experimental.enable_op_determinism()
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 DATASET_DIR = REPO_ROOT / "sw" / "dataset"
@@ -35,6 +43,7 @@ DIGITS_CACHE = DATASET_DIR / "digits.npz"
 
 ARTIFACT_DIR = Path(__file__).resolve().parent / "artifacts"
 ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+HW_SVH_PATH = REPO_ROOT / "hw" / "model.svh"
 
 BATCH_SIZE = 128
 EPOCHS = 250
@@ -276,7 +285,47 @@ plt.show()
 
 # %%
 # Export helpers -------------------------------------------------------------
+def pack_bits_to_words(bits: np.ndarray, word_width: int = 32) -> List[int]:
+    flat = bits.astype(np.uint8).flatten()
+    pad = (-len(flat)) % word_width
+    if pad:
+        flat = np.concatenate([flat, np.zeros(pad, dtype=np.uint8)])
+    chunks = flat.reshape(-1, word_width)
+    words: List[int] = []
+    for chunk in chunks:
+        word = 0
+        for idx, bit in enumerate(chunk):
+            word |= int(bit) << idx
+        words.append(word)
+    return words
+
+
+def quantize_to_int16(arr: np.ndarray) -> np.ndarray:
+    clipped = np.clip(np.rint(arr), -32768, 32767)
+    return clipped.astype(np.int16)
+
+
+def write_svh(mem_words: List[int], depth: int, path: Path) -> None:
+    if len(mem_words) < depth:
+        mem_words = mem_words + [0] * (depth - len(mem_words))
+    elif len(mem_words) > depth:
+        mem_words = mem_words[:depth]
+
+    lines: List[str] = []
+    lines.append("// Auto-generated model memory")
+    lines.append(f"localparam logic [31:0] MODEL_MEM [0:{depth-1}] = '{{")
+    for idx, word in enumerate(mem_words):
+        sep = "," if idx < depth - 1 else ""
+        lines.append(f"    32'h{word:08x}{sep}")
+    lines.append("};")
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote quantized model -> {path}")
+
+
 manifest: List[Dict[str, Any]] = []
+memh_blobs: List[Dict[str, Any]] = []
 layers = model.layers
 
 for idx, layer in enumerate(layers):
@@ -339,6 +388,21 @@ for idx, layer in enumerate(layers):
                 "comparison_sense_file": f"{layer.name}_comparison_sense.npy",
             }
         )
+        threshold_q = quantize_to_int16(popcount_threshold)
+        sense_bits = (sense > 0).astype(np.uint8)
+    else:
+        threshold_q = None
+        sense_bits = np.ones((layer.units,), dtype=np.uint8)
+
+    memh_blobs.append(
+        {
+            "name": layer.name,
+            "weights_bits": weights_bits.copy(),
+            "bias_q": quantize_to_int16(bias),
+            "threshold_q": threshold_q,
+            "sense_bits": sense_bits,
+        }
+    )
 
     for filename, array in artifacts:
         np.save(ARTIFACT_DIR / filename, array)
@@ -350,15 +414,79 @@ with manifest_path.open("w", encoding="utf-8") as fp:
     json.dump(manifest, fp, indent=2)
 
 print(f"Exported BinaryDense layers -> {manifest_path}")
+# Build flattened memory in hardware layout:
+# L1 weights -> L1 bias -> L1 thresholds -> L2 weights -> L2 bias
+L1_IN = images.shape[1]
+L1_OUT = HIDDEN_UNITS
+L2_OUT = len(target_names)
+L2_IN = L1_OUT
+
+L1_W_BITS = L1_IN * L1_OUT
+L1_W_WORDS = (L1_W_BITS + 31) // 32
+L1_B_WORDS = L1_OUT
+L1_T_WORDS = L1_OUT
+L1_S_WORDS = (L1_OUT + 31) // 32
+L2_W_BITS = L2_IN * L2_OUT
+L2_W_WORDS = (L2_W_BITS + 31) // 32
+L2_B_WORDS = L2_OUT
+MEM_DEPTH = L1_W_WORDS + L1_B_WORDS + L1_T_WORDS + L1_S_WORDS + L2_W_WORDS + L2_B_WORDS
+
+mem_words: List[int] = []
+
+# Layer ordering matches memh_blobs insertion (hidden, then logits)
+hidden_blob, logits_blob = memh_blobs
+
+mem_words.extend(pack_bits_to_words(hidden_blob["weights_bits"]))
+mem_words.extend(int(x) & 0xFFFF for x in hidden_blob["bias_q"].flatten())
+hidden_thr = hidden_blob["threshold_q"] if hidden_blob["threshold_q"] is not None else np.zeros((L1_OUT,), dtype=np.int16)
+mem_words.extend(int(x) & 0xFFFF for x in hidden_thr.flatten())
+mem_words.extend(pack_bits_to_words(hidden_blob["sense_bits"]))
+
+mem_words.extend(pack_bits_to_words(logits_blob["weights_bits"]))
+mem_words.extend(int(x) & 0xFFFF for x in logits_blob["bias_q"].flatten())
+
+write_svh(mem_words, MEM_DEPTH, HW_SVH_PATH)
 
 
 # %%
 # Golden vectors -------------------------------------------------------------
+# Hardware-model prediction helper using quantized blobs.
+def predict_hw(images_bits: np.ndarray) -> np.ndarray:
+    hidden_blob, logits_blob = memh_blobs
+    w1 = hidden_blob["weights_bits"]
+    thr = hidden_blob["threshold_q"]
+    sense = hidden_blob["sense_bits"]
+    w2 = logits_blob["weights_bits"]
+    bias2 = logits_blob["bias_q"]
+
+    preds: List[int] = []
+    for img in images_bits.reshape(images_bits.shape[0], -1):
+        hidden = np.zeros((L1_OUT,), dtype=np.uint8)
+        for o in range(L1_OUT):
+            match_count = int(np.sum(img == w1[:, o]))
+            if sense[o] > 0:
+                hidden[o] = 1 if match_count >= thr[o] else 0
+            else:
+                hidden[o] = 1 if match_count <= thr[o] else 0
+
+        best_cls = 0
+        best_score = -1_000_000
+        for c in range(L2_OUT):
+            match_count = int(np.sum(hidden == w2[:, c]))
+            score = (match_count * 2 - L2_IN) + int(bias2[c])
+            if score > best_score:
+                best_score = score
+                best_cls = c
+        preds.append(best_cls)
+    return np.array(preds, dtype=np.int32)
+
+
 golden_count = min(NUM_GOLDEN, len(X_test))
 golden_images = X_test[:golden_count]
 golden_labels = y_test[:golden_count]
 golden_probs = test_probs[:golden_count]
 golden_preds = np.argmax(golden_probs, axis=1)
+golden_preds_hw = predict_hw(((golden_images >= 0).astype(np.uint8)))
 
 golden_payload = {
     "images_flat": golden_images.astype(np.float32),
@@ -366,6 +494,7 @@ golden_payload = {
     "images_bits": ((golden_images >= 0).astype(np.uint8)),
     "labels": golden_labels.astype(np.int32),
     "predictions": golden_preds.astype(np.int32),
+    "predictions_hw": golden_preds_hw.astype(np.int32),
     "probabilities": golden_probs.astype(np.float32),
 }
 
