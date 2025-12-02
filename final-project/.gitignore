@@ -15,5 +15,5 @@ sw/artifacts/
 
 # Simulation outputs
 sim_build/
-*.vcd
+.ccache/
 *.fst

@@ -17,10 +17,10 @@ Environment setup:
 2. Run `source .venv/bin/activate`
 
 Running model:
-**TBD**
+- `python ./sw/model.py` trains the binarized digits model, exports quantized weights/thresholds into `hw/model.svh`, and writes golden vectors to `sw/artifacts/`.
 
 Running testbench:
-**TBD**
+- From `hw/`: `PATH=../.venv/bin:$PATH make SIM=verilator` builds + runs cocotb (reset, IO/backpressure, full golden sweep, latency, throughput) and emits `dump.vcd` for viewing (e.g., `gtkwave dump.vcd`).
 
 ## Goal & Scope
 
@@ -29,9 +29,8 @@ Primary goal: Build and verify a tiny, binarized neural network (BNN) accelerato
 Stretch goal: Add convolutional layers to the neural network to improve accuracy.
 
 Deliverable: 
-- `rtl/` SystemVerilog accelerator (perceptron + optional CNV-1)
-- `sim/` cocotb tests
-- `model/` Python training + export
+- `hw/` SystemVerilog model + cocotb simulation
+- `sw/` Python training + export
 - `docs/` final report
 - Evidence: waveforms, latency/throughput numbers, accuracy vs. Python golden, and a short demo clip.
 
@@ -42,10 +41,10 @@ Deliverable:
 The dataset will be based on `scikit-learn digits` (8×8 grayscale images).
 
 Ingestion:
-**TBD**
+- scikit-learn digits dataset is cached to `sw/dataset/digits.npz` on first run of `sw/model.py`.
 
 Processing:
-**TBD**
+- Normalize images to [-1,1], binarize to {0,1}, train/export a two-layer BinaryDense network; artifacts include packed weights, thresholds, sense bits, and golden vectors.
 
 ---
 
@@ -57,7 +56,11 @@ Top-level:
 - Timing: single-image, deterministic latency
 
 Datapath:
-**TBD**
+- AXI-Stream in (64-bit image) 
+- XNOR-popcount hidden layer (128 neurons, sense-aware threshold) 
+- binary output layer (10 classes) with match-count + bias 
+- argmax 
+- AXI-Stream out (class byte + TID). ROM weights/thresholds come from `model.svh`.
 
 ---
 
@@ -74,7 +77,7 @@ Datapath:
 
 Week 1
 1. Data & training (Python): train minimal model; export weights/thresholds + 200 test images + goldens.
-2. RTL skeleton: top-level streams, BRAM init from `.memh`, XNOR–popcount slice, threshold compare, argmax.
+2. RTL skeleton: top-level streams, BRAM init from `.svh`, XNOR–popcount slice, threshold compare, argmax.
 3. Basic test (cocotb): single image w/out class checking to verify IO
 
 ---
