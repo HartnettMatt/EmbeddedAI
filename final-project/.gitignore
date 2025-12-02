@@ -1,0 +1,19 @@
+# Environments
+.venv/
+
+# Python caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Generated data and artifacts
+sw/dataset/
+sw/artifacts/
+*.npz
+*.keras
+
+# Simulation outputs
+sim_build/
+*.vcd
+*.fst
