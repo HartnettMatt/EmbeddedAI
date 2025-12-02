@@ -17,10 +17,14 @@ Environment setup:
 2. Run `source .venv/bin/activate`
 
 Running model:
-- `python ./sw/model.py` trains the binarized digits model, exports quantized weights/thresholds into `hw/model.svh`, and writes golden vectors to `sw/artifacts/`.
+1. `python ./sw/model.py`
+Alternatively, run interactively as an ipynb in VSCode or online (section delimiters are `# %%`)
 
 Running testbench:
-- From `hw/`: `PATH=../.venv/bin:$PATH make SIM=verilator` builds + runs cocotb (reset, IO/backpressure, full golden sweep, latency, throughput) and emits `dump.vcd` for viewing (e.g., `gtkwave dump.vcd`).
+1. `cd hw/`
+2. `make`
+3. `gtkwave ./dump.vcd -a ./tb.gtkw`
+
 
 ## Goal & Scope
 
@@ -95,3 +99,10 @@ Week 3
 8. Polish & deliver: finalize docs, figures, and a short demo clip of sim run.
 
 ---
+
+## Use of Generative AI
+
+Generative AI was utilized in this project, primarily for code cleanup and documentation.
+
+Model: OpenAI ChatGPT 5.1 Thinking
+Prompt: For this python/systemverilog file, provide a concise, precise list of potential cleanups, documentation/comments, and optimizations that can be made. For each improvement, provide a drop in code snippet with minimal edits as well as the exact location of the code where the snippet can be placed.
